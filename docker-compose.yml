@@ -1,0 +1,174 @@
+# SecYourScan stack. Generate secrets first:  python scripts/gen_secrets.py
+#
+#   web (nginx, :8080) ─► api (FastAPI) ─► rabbitmq ─► worker-pipeline (default, osint)
+#                                                   └► worker-massive  (massive, concurrency 1)
+#   beat schedules sources every 5 min.  Stores: postgres · elasticsearch · minio.
+#   Dark-web traffic: workers ─► tor-lb (HAProxy) ─► tor ×5 (internal network only).
+
+x-app: &app
+  build: ./backend
+  image: secyourscan-backend:latest
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql+asyncpg://sys:${POSTGRES_PASSWORD}@db:5432/secyourscan
+    RABBITMQ_URL: amqp://sys:${RABBITMQ_PASS}@rabbitmq:5672/
+    ES_URL: http://elasticsearch:9200
+    MINIO_ENDPOINT: minio:9000
+    TOR_PROXY: socks5h://tor-lb:9050
+  secrets:
+    - source: jwt_private_key
+      target: JWT_PRIVATE_KEY
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  read_only: true
+  tmpfs: [/tmp]
+  extra_hosts: ["host.docker.internal:host-gateway"]  # reach a local LLM server on the host
+  restart: unless-stopped
+  networks: [backend, tor]
+
+x-depends: &depends
+  db: {condition: service_healthy}
+  rabbitmq: {condition: service_healthy}
+  elasticsearch: {condition: service_healthy}
+  minio: {condition: service_healthy}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sys
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run scripts/gen_secrets.py}
+      POSTGRES_DB: secyourscan
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sys -d secyourscan"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+    networks: [backend]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: sys
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:?run scripts/gen_secrets.py}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      retries: 20
+    ports: ["127.0.0.1:15672:15672"]  # management UI, localhost only
+    restart: unless-stopped
+    networks: [backend]
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "true"
+      xpack.security.http.ssl.enabled: "false"   # plaintext on the internal network only
+      ELASTIC_PASSWORD: ${ES_PASSWORD:?run scripts/gen_secrets.py}
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes: [esdata:/usr/share/elasticsearch/data]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs -u elastic:$$ELASTIC_PASSWORD http://localhost:9200/_cluster/health | grep -qv '\"status\":\"red\"'"]
+      interval: 10s
+      retries: 30
+    restart: unless-stopped
+    networks: [backend]
+
+  # S3-compatible object store. MinIO no longer publishes anonymous images, so
+  # this is SeaweedFS's S3 gateway; the app speaks plain S3 (MINIO_* settings
+  # are just the S3 endpoint and keys) and works with MinIO or Garage too.
+  minio:
+    image: chrislusf/seaweedfs:3.80
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        printf '{"identities":[{"name":"app","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
+        "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" > /tmp/s3.json &&
+        exec weed server -dir=/data -ip=minio -ip.bind=0.0.0.0 -volume.max=0 -s3 -s3.port=9000 -s3.config=/tmp/s3.json
+    environment:
+      S3_ACCESS_KEY: ${MINIO_ACCESS_KEY:?run scripts/gen_secrets.py}
+      S3_SECRET_KEY: ${MINIO_SECRET_KEY:?run scripts/gen_secrets.py}
+    volumes: [miniodata:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status || exit 1"]
+      interval: 10s
+      retries: 20
+    restart: unless-stopped
+    networks: [backend]
+
+  tor:
+    build: ./infrastructure/tor
+    deploy: {replicas: 5}
+    restart: unless-stopped
+    networks: [tor]
+
+  tor-lb:
+    image: haproxy:2.9-alpine
+    volumes: ["./infrastructure/tor/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"]
+    depends_on: [tor]
+    restart: unless-stopped
+    networks: [tor]
+
+  api:
+    <<: *app
+    depends_on: *depends
+
+  worker-pipeline:
+    <<: *app
+    command: celery -A app.worker.celery_app worker -Q default,osint --concurrency=4 --loglevel=INFO
+    healthcheck: {disable: true}
+    depends_on:
+      <<: *depends
+      api: {condition: service_healthy}   # api creates the schema on first start
+
+  worker-massive:
+    <<: *app
+    command: celery -A app.worker.celery_app worker -Q massive --concurrency=1 --loglevel=INFO
+    healthcheck: {disable: true}
+    depends_on:
+      <<: *depends
+      api: {condition: service_healthy}
+
+  beat:
+    <<: *app
+    command: celery -A app.worker.celery_app beat --loglevel=INFO --schedule=/tmp/celerybeat-schedule
+    healthcheck: {disable: true}
+    depends_on:
+      api: {condition: service_healthy}
+
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/web/Dockerfile
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+    networks: [backend]
+
+  # Optional local LLM:  docker compose --profile ai up -d
+  # then set AI_ENDPOINT=http://ollama:11434/v1 in .env and pull a model:
+  #   docker compose exec ollama ollama pull llama3.1:8b
+  ollama:
+    image: ollama/ollama:0.3.14
+    profiles: [ai]
+    volumes: [ollama:/root/.ollama]
+    restart: unless-stopped
+    networks: [backend]
+
+secrets:
+  jwt_private_key:
+    file: ./secrets/jwt_private_key.pem
+
+volumes:
+  pgdata:
+  esdata:
+  miniodata:
+  ollama:
+
+networks:
+  backend:
+  tor:
+    internal: false   # Tor needs egress; nothing else joins this network except workers and the LB

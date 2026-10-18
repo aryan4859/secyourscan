@@ -1,0 +1,10 @@
+# SOCKS only, reachable on the internal Docker network. No relay, no exit.
+# IsolateDestAddr: a fresh circuit per destination keeps crawls of different sites unlinked.
+SocksPort 0.0.0.0:9050 IsolateDestAddr
+SocksPolicy accept 10.0.0.0/8
+SocksPolicy accept 172.16.0.0/12
+SocksPolicy accept 192.168.0.0/16
+SocksPolicy reject *
+DataDirectory /var/lib/tor
+ExitRelay 0
+Log notice stdout

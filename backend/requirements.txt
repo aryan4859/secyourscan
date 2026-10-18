@@ -1,0 +1,28 @@
+# API
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30
+pydantic[email]>=2.8
+pydantic-settings>=2.4
+python-multipart>=0.0.9
+slowapi>=0.1.9
+orjson>=3.10
+# Data
+sqlalchemy[asyncio]>=2.0.30
+asyncpg>=0.29
+aiosqlite>=0.20
+# Auth
+pyjwt[crypto]>=2.9
+bcrypt>=4.2
+cryptography>=43
+# Pipeline
+celery>=5.4
+aio-pika>=9.4
+yara-python>=4.5
+elasticsearch[async]>=8.12,<9
+minio>=7.2
+httpx[socks]>=0.27
+beautifulsoup4>=4.12
+lxml>=5.2
+reportlab>=4.2
+# MCP server
+mcp>=1.2,<2
