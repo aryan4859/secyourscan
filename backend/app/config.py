@@ -106,6 +106,10 @@ class Settings(BaseSettings):
     # Integrations
     SOAR_WEBHOOK_URL: str | None = None
     THREATFOX_AUTH_KEY: str | None = None
+    # IOC Hunting enrichment (all optional; free tiers exist for each).
+    ABUSECH_AUTH_KEY: str | None = None  # auth.abuse.ch: ThreatFox + MalwareBazaar APIs; falls back to THREATFOX_AUTH_KEY
+    ABUSEIPDB_API_KEY: str | None = None
+    VIRUSTOTAL_API_KEY: str | None = None
     GITHUB_TOKEN: str | None = None
     HIBP_API_KEY: str | None = None
 

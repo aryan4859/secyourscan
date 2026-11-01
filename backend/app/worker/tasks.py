@@ -18,9 +18,12 @@ from ..models import (
     ApiKey,
     AuditLog,
     DnsRecord,
+    Incident,
+    IncidentEvent,
     IntelCache,
     InvestigationPlan,
     InvestigationTask,
+    Ioc,
     Leak,
     Lookalike,
     Notification,
@@ -32,8 +35,10 @@ from ..models import (
     SurfaceEvent,
     SurfaceHost,
     Tenant,
+    ThreatActor,
     TlsGrade,
     User,
+    Vendor,
     VerifiedDomain,
     VulnFinding,
     WatchItem,
@@ -182,6 +187,30 @@ def intel_sweep():
         for module in ("surface", "brand", "ransomware"):
             intel_scan_task.delay(tenant_id, module)
 
+    # Vendors are rated even for a tenant with an empty watchlist.
+    async def _vendor_tenants(db):
+        return (await db.execute(select(Vendor.tenant_id).distinct())).scalars().all()
+
+    for tenant_id in run_async(_vendor_tenants):
+        intel_scan_task.delay(tenant_id, "vendors")
+
+
+@celery_app.task(name="app.worker.tasks.ioc_refresh")
+def ioc_refresh():
+    """Daily: re-enrich indicators not looked at for a week, then open
+    incidents for any that turned malicious while sighted on our assets."""
+
+    async def _run(db):
+        from ..services import incidents, ioc
+
+        done = {}
+        for tenant_id in (await db.execute(select(Ioc.tenant_id).distinct())).scalars().all():
+            done[tenant_id] = await ioc.refresh_stale(db, tenant_id)
+            await incidents.sync(db, tenant_id)
+        return done
+
+    return run_async(_run)
+
 
 @celery_app.task(name="app.worker.tasks.purge_revoked_tokens")
 def purge_revoked_tokens():
@@ -202,12 +231,14 @@ def delete_tenant_saga(self, tenant_id: str, actor: str | None = None):
         objects = await storage.delete_bucket(tenant_id)
         plan_ids = select(InvestigationPlan.id).where(InvestigationPlan.tenant_id == tenant_id)
         await db.execute(delete(InvestigationTask).where(InvestigationTask.plan_id.in_(plan_ids)))
+        incident_ids = select(Incident.id).where(Incident.tenant_id == tenant_id)
+        await db.execute(delete(IncidentEvent).where(IncidentEvent.incident_id.in_(incident_ids)))
         for model in (Leak, Notification, SourceRun, Source, WatchItem, ApiKey, InvestigationPlan, YaraRule,
                       SurfaceHost, Lookalike, PhishingUrl, RansomwareHit, VulnFinding, TlsGrade, DnsRecord,
-                      SurfaceEvent, VerifiedDomain, User):
+                      SurfaceEvent, VerifiedDomain, Incident, ThreatActor, Ioc, Vendor, User):
             await db.execute(delete(model).where(model.tenant_id == tenant_id))
         await db.execute(delete(IntelCache).where(IntelCache.key.like(f"scan:{tenant_id}:%")))
-        await db.execute(delete(IntelCache).where(IntelCache.key == f"posture:{tenant_id}"))
+        await db.execute(delete(IntelCache).where(IntelCache.key.in_([f"posture:{tenant_id}", f"profile:{tenant_id}"])))
         await db.execute(delete(AuditLog).where(AuditLog.tenant_id == tenant_id))
         await db.execute(delete(Tenant).where(Tenant.id == tenant_id))
         await db.commit()

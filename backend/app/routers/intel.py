@@ -33,7 +33,7 @@ async def intel_summary(principal: Principal = Depends(require_scope("read")), d
 
 
 @router.post("/intel/scan/{module}", status_code=202)
-async def start_scan(module: Literal["surface", "vulns", "brand", "ransomware"], request: Request, background: BackgroundTasks,
+async def start_scan(module: Literal["surface", "vulns", "brand", "ransomware", "vendors"], request: Request, background: BackgroundTasks,
                      principal: Principal = Depends(require_scope("recon")), db: AsyncSession = Depends(get_db)):
     """Queue a scan. ``surface`` also refreshes ``vulns`` when it finishes."""
     ok, reason = license.can_scan()

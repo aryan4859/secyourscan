@@ -16,11 +16,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..models import IntelCache, Lookalike, Notification, PhishingUrl, RansomwareHit, SurfaceHost, TlsGrade, VulnFinding, utcnow
-from . import asm, brand, easm, ransomware
+from . import asm, brand, easm, incidents, ransomware, vendors
 
 logger = logging.getLogger("secyourscan.intel")
 
-MODULES = ("surface", "vulns", "brand", "ransomware")
+MODULES = ("surface", "vulns", "brand", "ransomware", "vendors")
 RECENT_TTL = timedelta(hours=1)
 
 
@@ -150,6 +150,14 @@ async def run_module(db: AsyncSession, tenant_id: str, module: str) -> dict:
             if result["new_phishing"]:
                 await _alert(db, tenant_id, "critical", f"{len(result['new_phishing'])} live phishing URL(s) using your brand",
                              "\n".join(result["new_phishing"][:10]), soar_type="PHISHING_URL")
+        elif module == "vendors":
+            result = await vendors.scan_vendors(db, tenant_id, await kev(db), await recent_ransomware(db))
+            if result["new_breaches"]:
+                await _alert(db, tenant_id, "critical", "A vendor was named on a ransomware leak site",
+                             "; ".join(result["new_breaches"][:10]), soar_type="VENDOR_BREACH")
+            if result["downgraded"]:
+                await _alert(db, tenant_id, "info", f"{len(result['downgraded'])} vendor rating(s) dropped",
+                             "; ".join(result["downgraded"][:10]))
         else:
             result = await ransomware.scan_ransomware(db, tenant_id, await recent_ransomware(db))
             if result["new"]:
@@ -159,6 +167,11 @@ async def run_module(db: AsyncSession, tenant_id: str, module: str) -> dict:
         await db.rollback()
         await set_status(db, tenant_id, module, status="error", error=str(exc)[:500], finished_at=utcnow().isoformat())
         raise
+    try:
+        result["incidents"] = len(await incidents.sync(db, tenant_id))
+    except Exception as exc:  # noqa: BLE001 — the scan itself succeeded; the next sync catches up
+        await db.rollback()
+        logger.warning("incident sync after %s scan failed: %s", module, exc)
     await set_status(db, tenant_id, module, status="ok", finished_at=utcnow().isoformat(), result=result)
     return result
 

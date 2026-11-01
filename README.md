@@ -50,10 +50,15 @@ Tests: `cd backend && .venv/Scripts/python -m pytest`
 |---|---|
 | `backend/app/services/pipeline.py` | The leak pipeline |
 | `backend/app/services/recon.py` | Collectors: Ahmia, onion crawler, Telegram, GitHub, HIBP, feeds |
+| `backend/app/services/incidents.py` | Incident queue: auto-open from findings, SLA, write-back |
+| `backend/app/services/actors.py`, `actors_data.py` | Threat-actor catalogue, relevance scoring, MITRE ATT&CK view |
+| `backend/app/services/ioc.py` | IOC enrichment, retro-hunt, STIX 2.1 (and TAXII 2.1 in `routers/threatintel.py`) |
+| `backend/app/services/vendors.py` | Supply-chain vendor ratings |
 | `backend/app/routers/` | HTTP API (OpenAPI at `/api/docs` when `ENV` isn't `production`) |
 | `backend/app/worker/` | Celery app, tasks, beat schedule |
 | `backend/mcp_server.py` | MCP server for Claude Desktop and similar clients (uses an API key) |
 | `frontend/` | React SOC console with the Ctrl+K palette |
+| `site/` | Public marketing site (Next.js): free email/domain breach check, breach directory |
 | `docs/` | VitePress documentation with local search |
 
 Use it only to monitor assets your organisation owns or is authorised to monitor.

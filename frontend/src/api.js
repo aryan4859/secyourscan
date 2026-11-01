@@ -219,6 +219,46 @@ export const api = {
   updateRansomwareHit: (id, status) => patch(`/ransomware/hits/${encodeURIComponent(id)}`, { status }),
   ransomwareActivity: (days = 7) => get('/ransomware/activity', { days }),
 
+  // incidents
+  incidents: (params) => get('/incidents', params),
+  incidentStats: () => get('/incidents/stats'),
+  incidentAssignees: () => get('/incidents/assignees'),
+  incident: (id) => get(`/incidents/${encodeURIComponent(id)}`),
+  createIncident: (body) => post('/incidents', body),
+  updateIncident: (id, body) => patch(`/incidents/${encodeURIComponent(id)}`, body),
+  commentIncident: (id, body) => post(`/incidents/${encodeURIComponent(id)}/comments`, { body }),
+  syncIncidents: () => post('/incidents/sync'),
+
+  // threat actors
+  threatProfile: () => get('/threat-intel/profile'),
+  saveThreatProfile: (body) => put('/threat-intel/profile', body),
+  actors: (params) => get('/actors', params),
+  actor: (id) => get(`/actors/${encodeURIComponent(id)}`),
+  attackMatrix: () => get('/actors/attack-matrix'),
+  createActor: (body) => post('/actors', body),
+  deleteActor: (id) => del(`/actors/${encodeURIComponent(id)}`),
+
+  // IOC hunting
+  iocSources: () => get('/iocs/sources'),
+  iocStats: () => get('/iocs/stats'),
+  iocs: (params) => get('/iocs', params),
+  ioc: (id) => get(`/iocs/${encodeURIComponent(id)}`),
+  huntIocs: (text, tags = []) => post('/iocs/hunt', { text, tags }),
+  updateIoc: (id, body) => patch(`/iocs/${encodeURIComponent(id)}`, body),
+  enrichIoc: (id) => post(`/iocs/${encodeURIComponent(id)}/enrich`),
+  deleteIoc: (id) => del(`/iocs/${encodeURIComponent(id)}`),
+  exportStix: (params) => download('/iocs/export/stix', params, 'secyourscan-iocs.stix.json'),
+  exportBlocklist: (type) => download('/iocs/export/blocklist.txt', { type }, `blocklist-${type}.txt`),
+
+  // supply chain
+  vendors: () => get('/vendors'),
+  vendorSummary: () => get('/vendors/summary'),
+  vendor: (id) => get(`/vendors/${encodeURIComponent(id)}`),
+  addVendor: (body) => post('/vendors', body),
+  importVendors: (csv) => post('/vendors/import', { csv }),
+  updateVendor: (id, body) => patch(`/vendors/${encodeURIComponent(id)}`, body),
+  deleteVendor: (id) => del(`/vendors/${encodeURIComponent(id)}`),
+
   // yara
   yaraRules: () => get('/yara/rules'),
   createYara: (body) => post('/yara/rules', body),

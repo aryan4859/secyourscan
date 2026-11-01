@@ -12,7 +12,7 @@ from .config import settings
 from .database import SessionLocal, engine
 from .limiter import limiter
 from .models import Base, Source, Tenant, User
-from .routers import ai, auth, domains, intel, leaks, monitoring, report, system, users
+from .routers import ai, auth, domains, incidents, intel, leaks, monitoring, report, system, threatintel, users, vendors
 from .security import hash_password, signing_keys
 from .services import broker
 
@@ -86,5 +86,6 @@ async def security_headers(request: Request, call_next):
     return response
 
 
-for r in (auth.router, users.router, leaks.router, monitoring.router, intel.router, domains.router, report.router, ai.router, system.router):
+for r in (auth.router, users.router, leaks.router, monitoring.router, intel.router, domains.router, report.router, ai.router,
+          system.router, incidents.router, threatintel.router, vendors.router):
     app.include_router(r)

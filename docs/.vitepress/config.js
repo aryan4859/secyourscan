@@ -59,6 +59,7 @@ export default withMermaid({
           { text: 'Watchlist & Alerting', link: '/guide/watchlist' },
           { text: 'Dark Web Recon', link: '/guide/dark-recon' },
           { text: 'External Risk', link: '/guide/external-risk' },
+          { text: 'Incidents & Threat Intel', link: '/guide/threat-intel' },
           { text: 'Customer Onboarding', link: '/guide/onboarding' },
           { text: 'Ingestion', link: '/guide/ingestion' },
           { text: 'Search', link: '/guide/search' },

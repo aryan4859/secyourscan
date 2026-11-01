@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..models import Leak, Notification, WatchItem, YaraRule, utcnow
-from . import cti, search_index, soar, storage
+from . import cti, incidents, search_index, soar, storage
 from .analyzer import analyzer
 from .babel import extract, mask_text
 from .normalization import hamming_distance, normalize_content, normalize_identifier, simhash64
@@ -230,6 +230,15 @@ async def process_leak(
 
     if severity >= settings.SOAR_THRESHOLD or vip:
         await soar.fire(leak, vip=vip and severity < settings.SOAR_THRESHOLD)
+
+    if severity >= settings.CRITICAL_THRESHOLD:
+        try:
+            await incidents.sync(db, tenant_id)
+        except Exception as exc:  # noqa: BLE001 — the leak is stored; the next sync opens its incident
+            leak_id = leak.id
+            await db.rollback()
+            await db.refresh(leak)  # rollback expired it; the caller still reads its fields
+            logger.warning("Incident sync for leak %s failed: %s", leak_id, exc)
 
     logger.info("leak processed tenant=%s source=%s severity=%s id=%s", tenant_id, source, severity, leak.id)
     return leak, True
