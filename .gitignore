@@ -10,3 +10,4 @@ secrets/
 openapi.json
 backend/wheels/*
 !backend/wheels/.gitkeep
+.next/

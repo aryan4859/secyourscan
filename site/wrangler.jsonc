@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Must match the Worker name of the Cloudflare project ("secyourscan").
+  "name": "secyourscan",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // OpenNext calls itself for revalidation; it must point at THIS Worker.
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "secyourscan"
+    }
+  ],
+  "r2_buckets": [
+    {
+      // ISR cache for the 1-hour revalidated pages (/ and /breaches).
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "secyourscan-site-opennext-cache"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
