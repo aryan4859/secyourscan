@@ -25,6 +25,14 @@ import Vulns from './pages/Vulns';
 import Brand from './pages/Brand';
 import Ransomware from './pages/Ransomware';
 import Rules from './pages/Rules';
+import Incidents from './pages/Incidents';
+import ThreatActors from './pages/ThreatActors';
+import IocHunting from './pages/IocHunting';
+import SupplyChain from './pages/SupplyChain';
+import Identity from './pages/Identity';
+import VulnIntel from './pages/VulnIntel';
+import Executives from './pages/Executives';
+import Takedowns from './pages/Takedowns';
 import Audit from './pages/Audit';
 import Settings from './pages/Settings';
 
@@ -171,6 +179,14 @@ function Shell() {
             <Route path="/vulns" element={<Vulns />} />
             <Route path="/brand" element={<Brand />} />
             <Route path="/ransomware" element={<Ransomware />} />
+            <Route path="/incidents" element={<Incidents />} />
+            <Route path="/actors" element={<ThreatActors />} />
+            <Route path="/iocs" element={<IocHunting />} />
+            <Route path="/supply-chain" element={<SupplyChain />} />
+            <Route path="/identity" element={<Identity />} />
+            <Route path="/vuln-intel" element={<VulnIntel />} />
+            <Route path="/executives" element={<Executives />} />
+            <Route path="/takedowns" element={<Takedowns />} />
             <Route path="/topology" element={<Topology />} />
             <Route path="/ai" element={<AiAnalyst />} />
             <Route path="/rules" element={<Rules />} />

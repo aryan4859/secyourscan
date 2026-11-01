@@ -30,11 +30,14 @@ celery_app.conf.update(
         "app.worker.tasks.ahmia_probe_task": {"queue": "osint"},
         "app.worker.tasks.intel_scan_task": {"queue": "osint"},
         "app.worker.tasks.intel_sweep": {"queue": "osint"},
+        "app.worker.tasks.ioc_refresh": {"queue": "osint"},
     },
     beat_schedule={
         "dispatch-due-sources": {"task": "app.worker.tasks.dispatch_due_sources", "schedule": crontab(minute="*/5")},
         "purge-revoked-tokens": {"task": "app.worker.tasks.purge_revoked_tokens", "schedule": crontab(minute=7)},
         "intel-sweep": {"task": "app.worker.tasks.intel_sweep",
                         "schedule": crontab(minute=17, hour=f"*/{max(1, min(settings.INTEL_SWEEP_HOURS, 24))}")},
+        "ioc-refresh": {"task": "app.worker.tasks.ioc_refresh", "schedule": crontab(minute=43, hour=3)},
+        "vuln-intel-refresh": {"task": "app.worker.tasks.vuln_intel_refresh", "schedule": crontab(minute=29, hour="*/6")},
     },
 )

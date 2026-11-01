@@ -8,6 +8,7 @@ plain lookups of the watched domains.
 """
 
 import asyncio
+import ipaddress
 import logging
 import ssl
 from datetime import datetime
@@ -75,6 +76,48 @@ RISK_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 def classify_port(port: int) -> dict:
     service, risk, why = PORT_RISK.get(port, (None, None, None))
     return {"port": port, "service": service or "unknown", "risk": risk or "info", "why": why or ""}
+
+
+# ── CDN edges ────────────────────────────────────────────────────────────────
+
+# A hostname behind a CDN resolves to a shared edge IP. What Shodan sees on
+# that IP (ports, CPEs, CVEs) belongs to every site the CDN serves from it —
+# e.g. WordPress CVEs on a Cloudflare IP for a site that never ran WordPress —
+# so none of it may be attributed to the host. Published IPv4 ranges.
+CDN_RANGES = {
+    "Cloudflare": ("173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18",
+                   "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17",
+                   "162.158.0.0/15", "104.16.0.0/13", "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22"),
+    "Fastly": ("151.101.0.0/16", "199.232.0.0/16", "146.75.0.0/17", "23.235.32.0/20", "43.249.72.0/22",
+               "103.244.50.0/24", "103.245.222.0/23", "103.245.224.0/24", "104.156.80.0/20", "157.52.64.0/18",
+               "167.82.0.0/17", "172.111.64.0/18", "185.31.16.0/22", "199.27.72.0/21"),
+    "Akamai": ("23.32.0.0/11", "23.192.0.0/11", "2.16.0.0/13", "104.64.0.0/10", "184.24.0.0/13", "95.100.0.0/15",
+               "96.16.0.0/15", "72.246.0.0/15"),
+    "Amazon CloudFront": ("13.32.0.0/15", "13.224.0.0/14", "18.64.0.0/14", "18.154.0.0/15", "52.84.0.0/15",
+                          "54.182.0.0/16", "54.192.0.0/16", "54.230.0.0/16", "54.239.128.0/18", "99.84.0.0/16",
+                          "108.156.0.0/14", "143.204.0.0/16", "205.251.192.0/19"),
+    "Google Cloud CDN": ("34.120.0.0/16", "34.149.0.0/16", "35.186.192.0/18"),
+    "Bunny CDN": ("185.93.1.0/24", "185.93.2.0/24", "185.93.3.0/24"),
+    "Vercel": ("76.76.21.0/24", "216.198.79.0/24"),
+    "Netlify": ("75.2.60.0/24", "99.83.231.0/24"),
+    "GitHub Pages": ("185.199.108.0/22",),
+}
+_CDN_NETS = [(name, ipaddress.ip_network(r)) for name, ranges in CDN_RANGES.items() for r in ranges]
+
+
+def cdn_provider(ip: str | None, tags: list | None = None) -> str | None:
+    """The CDN / shared edge an IP belongs to, or None. Shodan's own ``cdn``
+    tag counts too, for providers not in the list."""
+    if not ip:
+        return None
+    try:
+        a = ipaddress.ip_address(ip)
+    except ValueError:
+        return None
+    for name, net in _CDN_NETS:
+        if a.version == net.version and a in net:
+            return name
+    return "CDN" if tags and "cdn" in tags else None
 
 
 # ── TLS grading ──────────────────────────────────────────────────────────────

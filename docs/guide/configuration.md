@@ -140,6 +140,10 @@ Enabled when `AI_ENDPOINT` is set.
 | `THREATFOX_AUTH_KEY` | unset | ThreatFox IP enrichment is skipped without it |
 | `GITHUB_TOKEN` | unset | GitHub code search sources fail without it |
 | `HIBP_API_KEY` | unset | HIBP sources fail without it |
+| `ABUSECH_AUTH_KEY` | unset | ThreatFox and MalwareBazaar lookups in IOC Hunting; falls back to `THREATFOX_AUTH_KEY` |
+| `ABUSEIPDB_API_KEY` | unset | AbuseIPDB IP reputation in IOC Hunting |
+| `VIRUSTOTAL_API_KEY` | unset | VirusTotal lookups in IOC Hunting (free tier: 4 requests/minute) |
+| `OTX_API_KEY` | unset | OTX passive DNS (Attack Surface) and OTX pulses (IOC Hunting) |
 
 ## Scoring
 

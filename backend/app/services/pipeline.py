@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..models import Leak, Notification, WatchItem, YaraRule, utcnow
-from . import cti, search_index, soar, storage
+from . import cti, incidents, search_index, soar, storage
 from .analyzer import analyzer
 from .babel import extract, mask_text
 from .normalization import hamming_distance, normalize_content, normalize_identifier, simhash64
@@ -97,15 +97,22 @@ def score(yara_score: int, entities: dict, watch_matches: list[dict]) -> int:
         s += min(40, 10 + entities["credential_count"])
     if entities.get("cards"):
         s += 30
+    stolen = entities.get("stealer")
+    if stolen:
+        # Credentials taken from an infected machine: live sessions, saved
+        # passwords and cookies, not a years-old breach.
+        s += 40 + min(10, 2 * len(stolen.get("records") or []))
     if watch_matches:
         s += 25
+        if stolen:
+            s += 15  # an infected machine holds *our* credentials
         if any(m["vip"] for m in watch_matches):
             s += 15
     return max(0, min(100, s))
 
 
 def category_for(entities: dict, yara_matches: list[dict]) -> str:
-    if entities.get("credential_count"):
+    if entities.get("credential_count") or entities.get("stealer"):
         return "CREDENTIALS"
     if entities.get("cards"):
         return "FINANCIAL"
@@ -230,6 +237,15 @@ async def process_leak(
 
     if severity >= settings.SOAR_THRESHOLD or vip:
         await soar.fire(leak, vip=vip and severity < settings.SOAR_THRESHOLD)
+
+    if severity >= settings.CRITICAL_THRESHOLD:
+        try:
+            await incidents.sync(db, tenant_id)
+        except Exception as exc:  # noqa: BLE001 — the leak is stored; the next sync opens its incident
+            leak_id = leak.id
+            await db.rollback()
+            await db.refresh(leak)  # rollback expired it; the caller still reads its fields
+            logger.warning("Incident sync for leak %s failed: %s", leak_id, exc)
 
     logger.info("leak processed tenant=%s source=%s severity=%s id=%s", tenant_id, source, severity, leak.id)
     return leak, True

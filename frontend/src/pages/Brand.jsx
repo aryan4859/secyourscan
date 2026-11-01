@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Fish, Globe, Lock, Mail, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Fish, Gavel, Globe, Lock, Mail, Search } from 'lucide-react';
 import { api } from '../api';
 import ScanBar from '../components/ScanBar';
 import SourcesPanel from '../components/SourcesPanel';
@@ -22,7 +23,18 @@ export default function Brand() {
   const [minRisk, setMinRisk] = useState(0);
   const [hideBenign, setHideBenign] = useState(true);
   const toast = useToast();
+  const navigate = useNavigate();
   const reload = useCallback(() => { list.reload(); phish.reload(); status.reload(); }, [list.reload, phish.reload, status.reload]);
+  const requestTakedown = async (sourceType, id) => {
+    try {
+      const td = await api.createTakedown({ source_type: sourceType, source_id: id, reason: 'phishing' });
+      toast(`${td.ref} drafted: abuse contacts looked up`, 'ok');
+      navigate(`/takedowns?open=${td.id}`);
+    } catch (e) {
+      if (e.status === 409) navigate('/takedowns');
+      toast(e.message, 'error');
+    }
+  };
   const last = status.data?.brand?.result || {};
   const setPhishStatus = async (p, s) => {
     try {
@@ -84,6 +96,9 @@ export default function Brand() {
                             <option value="new">New</option><option value="reported">Reported</option><option value="down">Taken down</option><option value="benign">Not phishing</option>
                           </select>
                           <CopyButton text={p.url} label="" />
+                          {['new', 'reported'].includes(p.status) && (
+                            <button className="btn btn-sm" title="Draft a takedown request" onClick={() => requestTakedown('phishing', p.id)}><Gavel size={13} /></button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -143,6 +158,9 @@ export default function Brand() {
                         {STATUSES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
                       </select>
                       <CopyButton text={x.domain} label="" />
+                      {x.status !== 'benign' && (
+                        <button className="btn btn-sm" title="Draft a takedown request" onClick={() => requestTakedown('lookalike', x.id)}><Gavel size={13} /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -158,7 +176,7 @@ export default function Brand() {
         { key: 'phishstats', label: 'PhishStats', href: 'https://phishstats.info', desc: 'Searchable phishing URL database, queried for your brand name' },
         { key: 'crtsh', label: 'Certificate transparency (crt.sh)', href: 'https://crt.sh', desc: 'Whether a lookalike already has a TLS certificate' },
       ]} counts={{ registered: last.registered, ...(last.phishing_feeds || {}), crtsh: last.registered !== undefined ? 'checked' : undefined }} unit="" />
-      <p className="fineprint">SecYourScan never opens these sites. Investigate them from an isolated browser, and request takedowns through the registrar's or hosting provider's abuse contact.</p>
+      <p className="fineprint">SecYourScan never opens these sites. Investigate them from an isolated browser. The takedown button drafts a request with the registrar's and hosting provider's abuse contacts on the Takedowns page.</p>
     </div>
   );
 }

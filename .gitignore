@@ -8,3 +8,5 @@ docs/.vitepress/dist/
 .env
 secrets/
 openapi.json
+backend/wheels/*
+!backend/wheels/.gitkeep

@@ -438,3 +438,190 @@ class AuditLog(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
     prev_hash: Mapped[str] = mapped_column(String(64), default="0" * 64)
     row_hash: Mapped[str] = mapped_column(String(64))
+
+
+# ── Incidents (alarm management) ─────────────────────────────────────────────
+
+
+class Incident(Base):
+    """One alarm to triage, opened by hand or from a finding (a critical leak,
+    a KEV vulnerability, a lookalike, a ransomware post…). ``source_type`` +
+    ``source_id`` point at that finding and make the auto-open idempotent:
+    a finding gets at most one incident, ever."""
+
+    __tablename__ = "incidents"
+    __table_args__ = (UniqueConstraint("tenant_id", "source_type", "source_id"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    number: Mapped[int] = mapped_column(Integer, default=0)  # per tenant, shown as INC-0001
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str] = mapped_column(Text, default="")
+    # leak | vuln | lookalike | phishing | ransomware | surface | ioc | vendor | manual
+    category: Mapped[str] = mapped_column(String(16), index=True)
+    severity: Mapped[str] = mapped_column(String(16), default="medium", index=True)  # critical | high | medium | low
+    # open | investigating | contained | resolved | false_positive
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    assignee_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    source_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    actor: Mapped[str | None] = mapped_column(String(64), nullable=True)  # threat actor / ransomware group, when known
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    created_by: Mapped[str] = mapped_column(String(64), default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    sla_due_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # first move out of "open"
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    events: Mapped[list["IncidentEvent"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan", order_by="IncidentEvent.at"
+    )
+
+
+class IncidentEvent(Base):
+    """The incident's timeline: creation, every field change, every comment."""
+
+    __tablename__ = "incident_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    incident_id: Mapped[str] = mapped_column(ForeignKey("incidents.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))  # created | status | severity | assignee | comment
+    actor: Mapped[str] = mapped_column(String(255), default="system")
+    body: Mapped[str] = mapped_column(Text, default="")
+    at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    incident: Mapped[Incident] = relationship(back_populates="events")
+
+
+# ── Threat intelligence ──────────────────────────────────────────────────────
+
+
+class ThreatActor(Base):
+    """A tenant's own actor profile. The built-in catalogue lives in code
+    (``services/actors_data.py``); these rows add to it."""
+
+    __tablename__ = "threat_actors"
+    __table_args__ = (UniqueConstraint("tenant_id", "name"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    aliases: Mapped[list] = mapped_column(JSON, default=list)
+    kind: Mapped[str] = mapped_column(String(16), default="cybercrime")  # apt | ransomware | cybercrime | hacktivist
+    origin: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    motivation: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    sectors: Mapped[list] = mapped_column(JSON, default=list)
+    countries: Mapped[list] = mapped_column(JSON, default=list)
+    techniques: Mapped[list] = mapped_column(JSON, default=list)
+    malware: Mapped[list] = mapped_column(JSON, default=list)
+    references: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Ioc(Base):
+    """An indicator the tenant hunted or imported, with what each enrichment
+    source said about it and whether it was ever seen in the tenant's data."""
+
+    __tablename__ = "iocs"
+    __table_args__ = (UniqueConstraint("tenant_id", "type", "value"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    type: Mapped[str] = mapped_column(String(16), index=True)  # ip | domain | url | md5 | sha1 | sha256 | email
+    value: Mapped[str] = mapped_column(String(1024))
+    verdict: Mapped[str] = mapped_column(String(16), default="unknown", index=True)  # malicious | suspicious | clean | unknown
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    verdict_override: Mapped[bool] = mapped_column(Boolean, default=False)
+    enrichment: Mapped[dict] = mapped_column(JSON, default=dict)  # {source: result, or {"error": …}}
+    sightings: Mapped[list] = mapped_column(JSON, default=list)  # where it appears in *our* data
+    malware: Mapped[list] = mapped_column(JSON, default=list)
+    actors: Mapped[list] = mapped_column(JSON, default=list)
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    note: Mapped[str] = mapped_column(Text, default="")
+    tlp: Mapped[str] = mapped_column(String(8), default="amber")  # clear | green | amber | red
+    created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    first_seen: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    last_enriched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+# ── Executive protection & takedowns ─────────────────────────────────────────
+
+
+class Executive(Base):
+    """A person whose exposure is tracked on their own: leaks naming their
+    emails or name, stealer infections of their accounts, lookalike domains and
+    handles that impersonate them. Their emails and name are kept on the
+    watchlist as VIP items, so the pipeline flags matches as they arrive."""
+
+    __tablename__ = "executives"
+    __table_args__ = (UniqueConstraint("tenant_id", "name"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    title: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    emails: Mapped[list] = mapped_column(JSON, default=list)
+    usernames: Mapped[list] = mapped_column(JSON, default=list)  # social / chat handles
+    phones: Mapped[list] = mapped_column(JSON, default=list)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class TakedownRequest(Base):
+    """A request to have an abusive domain, URL or post removed: who to ask
+    (registrar / host abuse contacts from RDAP), the evidence, the notice
+    text, and where the request stands. Notices are drafted here and sent by
+    the analyst; nothing is emailed automatically."""
+
+    __tablename__ = "takedown_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    number: Mapped[int] = mapped_column(Integer, default=0)  # per tenant, shown as TD-0001
+    kind: Mapped[str] = mapped_column(String(16))  # domain | url | content | social
+    target: Mapped[str] = mapped_column(String(1024))  # the domain or URL to take down
+    source_type: Mapped[str | None] = mapped_column(String(32), nullable=True)  # lookalike | phishing | leak | manual
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    reason: Mapped[str] = mapped_column(String(32), default="phishing")  # phishing | impersonation | trademark | data_leak | malware | fraud
+    # draft | submitted | acknowledged | taken_down | rejected | withdrawn
+    status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
+    registrar: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    hosting: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contacts: Mapped[list] = mapped_column(JSON, default=list)  # [{role, name, email, source}]
+    evidence: Mapped[dict] = mapped_column(JSON, default=dict)
+    notice: Mapped[str] = mapped_column(Text, default="")
+    history: Mapped[list] = mapped_column(JSON, default=list)  # [{at, actor, status, note}]
+    created_by: Mapped[str] = mapped_column(String(64), default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+# ── Supply chain ─────────────────────────────────────────────────────────────
+
+
+class Vendor(Base):
+    """A third party the tenant depends on, rated from passive public data
+    only: DNS, its web TLS, Shodan InternetDB, threat feeds, leak sites."""
+
+    __tablename__ = "vendors"
+    __table_args__ = (UniqueConstraint("tenant_id", "domain"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    domain: Mapped[str] = mapped_column(String(255))
+    criticality: Mapped[str] = mapped_column(String(16), default="medium")  # critical | high | medium | low
+    category: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    contact: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    score: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 0–100, higher is safer
+    grade: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    findings: Mapped[list] = mapped_column(JSON, default=list)
+    facts: Mapped[dict] = mapped_column(JSON, default=dict)  # what the last scan saw: IPs, ports, CVEs, TLS grade
+    breaches: Mapped[list] = mapped_column(JSON, default=list)  # ransomware posts naming it
+    history: Mapped[list] = mapped_column(JSON, default=list)  # [{at, score, grade}], newest last
+    last_scanned_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

@@ -219,6 +219,73 @@ export const api = {
   updateRansomwareHit: (id, status) => patch(`/ransomware/hits/${encodeURIComponent(id)}`, { status }),
   ransomwareActivity: (days = 7) => get('/ransomware/activity', { days }),
 
+  // incidents
+  incidents: (params) => get('/incidents', params),
+  incidentStats: () => get('/incidents/stats'),
+  incidentAssignees: () => get('/incidents/assignees'),
+  incident: (id) => get(`/incidents/${encodeURIComponent(id)}`),
+  createIncident: (body) => post('/incidents', body),
+  updateIncident: (id, body) => patch(`/incidents/${encodeURIComponent(id)}`, body),
+  commentIncident: (id, body) => post(`/incidents/${encodeURIComponent(id)}/comments`, { body }),
+  syncIncidents: () => post('/incidents/sync'),
+
+  // threat actors
+  threatProfile: () => get('/threat-intel/profile'),
+  saveThreatProfile: (body) => put('/threat-intel/profile', body),
+  actors: (params) => get('/actors', params),
+  actor: (id) => get(`/actors/${encodeURIComponent(id)}`),
+  attackMatrix: () => get('/actors/attack-matrix'),
+  createActor: (body) => post('/actors', body),
+  deleteActor: (id) => del(`/actors/${encodeURIComponent(id)}`),
+
+  // IOC hunting
+  iocSources: () => get('/iocs/sources'),
+  iocStats: () => get('/iocs/stats'),
+  iocs: (params) => get('/iocs', params),
+  ioc: (id) => get(`/iocs/${encodeURIComponent(id)}`),
+  huntIocs: (text, tags = []) => post('/iocs/hunt', { text, tags }),
+  updateIoc: (id, body) => patch(`/iocs/${encodeURIComponent(id)}`, body),
+  enrichIoc: (id) => post(`/iocs/${encodeURIComponent(id)}/enrich`),
+  deleteIoc: (id) => del(`/iocs/${encodeURIComponent(id)}`),
+  exportStix: (params) => download('/iocs/export/stix', params, 'secyourscan-iocs.stix.json'),
+  exportBlocklist: (type) => download('/iocs/export/blocklist.txt', { type }, `blocklist-${type}.txt`),
+
+  // supply chain
+  vendors: () => get('/vendors'),
+  vendorSummary: () => get('/vendors/summary'),
+  vendor: (id) => get(`/vendors/${encodeURIComponent(id)}`),
+  addVendor: (body) => post('/vendors', body),
+  importVendors: (csv) => post('/vendors/import', { csv }),
+  updateVendor: (id, body) => patch(`/vendors/${encodeURIComponent(id)}`, body),
+  deleteVendor: (id) => del(`/vendors/${encodeURIComponent(id)}`),
+
+  // identity & access intelligence
+  identitySummary: () => get('/identity/summary'),
+  identities: (params) => get('/identity/identities', params),
+  identity: (login) => get('/identity/identity', { login }),
+  identityMachines: () => get('/identity/machines'),
+
+  // vulnerability intelligence
+  vulnFeed: (params) => get('/vuln-intel/feed', params),
+  vulnRefresh: () => post('/vuln-intel/refresh'),
+  techStack: () => get('/vuln-intel/stack'),
+  saveTechStack: (items) => put('/vuln-intel/stack', { items }),
+
+  // executive protection
+  executives: () => get('/executives'),
+  executive: (id) => get(`/executives/${encodeURIComponent(id)}`),
+  createExecutive: (body) => post('/executives', body),
+  updateExecutive: (id, body) => patch(`/executives/${encodeURIComponent(id)}`, body),
+  deleteExecutive: (id) => del(`/executives/${encodeURIComponent(id)}`),
+
+  // takedowns
+  takedowns: (params) => get('/takedowns', params),
+  takedownStats: () => get('/takedowns/stats'),
+  takedown: (id) => get(`/takedowns/${encodeURIComponent(id)}`),
+  createTakedown: (body) => post('/takedowns', body),
+  updateTakedown: (id, body) => patch(`/takedowns/${encodeURIComponent(id)}`, body),
+  relookupTakedown: (id) => post(`/takedowns/${encodeURIComponent(id)}/lookup`),
+
   // yara
   yaraRules: () => get('/yara/rules'),
   createYara: (body) => post('/yara/rules', body),
