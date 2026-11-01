@@ -1,10 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#2f7cf6"/>
-  <g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
-    <path d="M16 16 L23.5 8.5"/>
-    <path d="M9.5 22.5a9.2 9.2 0 0 1 13-13"/>
-    <path d="M12.6 19.4a4.8 4.8 0 0 1 6.8-6.8"/>
-  </g>
-  <circle cx="16" cy="16" r="2" fill="#fff"/>
-  <circle cx="23.5" cy="8.5" r="1.6" fill="#ff6b6b"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .n { fill: #0a1a3a; } .t { stroke: #0a1a3a; }
+    @media (prefers-color-scheme: dark) { .n { fill: #2b4c8f; } .t { stroke: #2b4c8f; } }
+  </style>
+  <path class="n" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z"/>
+  <path fill="#0b5cf5" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z" transform="rotate(90 50 50)"/>
+  <path class="n" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z" transform="rotate(180 50 50)"/>
+  <path fill="#0b5cf5" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z" transform="rotate(270 50 50)"/>
+  <path class="t" stroke-width="3" stroke-linecap="round" fill="none" d="M50 11v17M50 72v17M11 50h17M72 50h17"/>
+  <rect x="43.5" y="43.5" width="13" height="13" rx="1.8" fill="#c0120c"/>
 </svg>

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { HashRouter, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight, LogOut, Menu, Radar, Search, X } from 'lucide-react';
+import { ChevronRight, LogOut, Menu, Search, X } from 'lucide-react';
+import BrandMark, { Wordmark } from './components/BrandMark';
 import { NAV, NAV_GROUPS } from './nav';
 import { api, onUnauthorized } from './api';
 import { SessionCtx, useSession } from './session';
@@ -117,8 +118,8 @@ function Shell() {
     <div className={`shell ${navOpen ? 'nav-open' : ''}`}>
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark"><Radar size={16} /></span>
-          <span className="brand-name">SecYourScan</span>
+          <BrandMark size={26} />
+          <Wordmark />
           <button className="icon-btn nav-close" onClick={() => setNavOpen(false)} aria-label="Close menu"><X size={18} /></button>
         </div>
         <nav>

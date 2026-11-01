@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .n { fill: #0a1a3a; } .t { stroke: #0a1a3a; }
+    @media (prefers-color-scheme: dark) { .n { fill: #2b4c8f; } .t { stroke: #2b4c8f; } }
+  </style>
+  <path class="n" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z"/>
+  <path fill="#0b5cf5" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z" transform="rotate(90 50 50)"/>
+  <path class="n" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z" transform="rotate(180 50 50)"/>
+  <path fill="#0b5cf5" d="M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z" transform="rotate(270 50 50)"/>
+  <path class="t" stroke-width="3" stroke-linecap="round" fill="none" d="M50 11v17M50 72v17M11 50h17M72 50h17"/>
+  <rect x="43.5" y="43.5" width="13" height="13" rx="1.8" fill="#c0120c"/>
+</svg>

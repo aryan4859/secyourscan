@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Lock, Radar } from 'lucide-react';
+import { ArrowRight, Lock } from 'lucide-react';
 import { api } from '../api';
+import BrandMark, { Wordmark } from '../components/BrandMark';
 import { ErrorBox } from '../components/ui';
 
 const OK = new Set(['ok', 'enabled', 'configured']);
@@ -34,8 +35,8 @@ export default function Login({ onLoggedIn }) {
     <div className="login-wrap">
       <section className="login-hero">
         <div className="login-brand">
-          <span className="brand-mark"><Radar size={18} /></span>
-          <span className="brand-text"><span className="brand-name">SecYourScan</span><span className="brand-sub">Exposure monitoring</span></span>
+          <BrandMark size={34} />
+          <span className="brand-text"><Wordmark /><span className="brand-sub">Exposure monitoring</span></span>
         </div>
         <div className="login-pitch">
           <div className="login-eyebrow">Threat exposure · your own assets</div>
