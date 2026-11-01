@@ -10,8 +10,8 @@ const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500'], variabl
 export const metadata = {
   metadataBase: new URL(process.env.SITE_URL || 'http://localhost:3000'),
   title: { default: 'SecYourScan: know what’s already out there', template: '%s · SecYourScan' },
-  description: 'SecYourScan watches breach data, paste sites, the dark web and your internet-facing systems, and tells you what affects your organisation. Self-hosted. Check an email for free.',
-  openGraph: { title: 'SecYourScan', description: 'Breach, dark-web and attack-surface monitoring you run yourself.', type: 'website' },
+  description: 'SecYourScan watches breach data, paste sites, the dark web and your internet-facing systems, and tells you what affects your organisation. Check an email for free.',
+  openGraph: { title: 'SecYourScan', description: 'Breach, dark-web and attack-surface monitoring for your organisation.', type: 'website' },
 };
 
 export const viewport = {
@@ -35,7 +35,7 @@ export default function RootLayout({ children }) {
               <nav aria-label="Footer">
                 <Link href="/check">Email check</Link>
                 <Link href="/breaches">Breach directory</Link>
-                <Link href="/#self-host">Self-host</Link>
+                <Link href="/#pricing">Pricing</Link>
               </nav>
             </div>
           </footer>

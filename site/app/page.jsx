@@ -22,12 +22,16 @@ const CAPS = [
     'Findings become incidents with an owner and an SLA. Hunt indicators across seven intel sources and share them with your SIEM over STIX/TAXII.'],
 ];
 
-const SELF_HOST = [
-  'Each customer or business unit is its own tenant, fully isolated.',
-  'Your domains must pass a DNS TXT check before they are scanned.',
-  'Every action is written to a tamper-evident audit log.',
-  'Signed PDF evidence packs for legal and insurers.',
-  'An MCP server lets Claude Desktop query your findings with an API key.',
+// Placeholder prices: edit before launch.
+const PLANS = [
+  { name: 'Free', price: '$0', per: 'forever', blurb: 'For checking yourself.', cta: ['Check an email', '/check'],
+    items: ['Unlimited single-email checks', 'Domain exposure summary', 'Full breach directory'] },
+  { name: 'Team', price: '$99', per: 'per month', blurb: 'For a small company with one or two domains.', cta: ['Start monitoring', 'mailto:sales@secyourscan.com?subject=Team%20plan'], featured: true,
+    items: ['2 verified domains, 250 staff emails', 'Breach, paste and dark-web alerts', 'Attack-surface scans and TLS/DNS checks', 'Lookalike-domain watch', 'Email and Slack alerts'] },
+  { name: 'Business', price: '$399', per: 'per month', blurb: 'For security teams that need the full picture.', cta: ['Start monitoring', 'mailto:sales@secyourscan.com?subject=Business%20plan'],
+    items: ['10 verified domains, 2,500 staff emails', 'Everything in Team', 'Ransomware leak-site and threat-actor alerts', 'Third-party ratings for 25 suppliers', 'Incidents with SLAs, IOC hunting, STIX/TAXII'] },
+  { name: 'Enterprise', price: 'Custom', per: 'annual', blurb: 'For MSSPs and large organisations.', cta: ['Talk to us', 'mailto:sales@secyourscan.com?subject=Enterprise'],
+    items: ['Unlimited domains and tenants', 'Signed PDF evidence packs', 'Tamper-evident audit log and SSO', 'MCP server and API access', 'Dedicated support'] },
 ];
 
 export default async function Home() {
@@ -80,8 +84,8 @@ export default async function Home() {
             <p className="label">The platform</p>
             <div>
               <h2>One place to see how exposed you are, and what to do first.</h2>
-              <p>The check above is the small version. The platform runs on your own servers and watches everything
-                below for your domains, staff emails, brands and suppliers, around the clock.</p>
+              <p>The check above is the small version. The platform watches everything below for your domains, staff
+                emails, brands and suppliers, around the clock.</p>
             </div>
           </Reveal>
           <ol className="caps">
@@ -159,24 +163,27 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="block" id="self-host">
+      <section className="block" id="pricing">
         <div className="wrap">
           <Reveal className="block-head">
-            <p className="label">Self-host</p>
+            <p className="label">Pricing</p>
             <div>
-              <h2>Runs on your hardware. Your findings stay there.</h2>
-              <p>One Docker Compose stack: API, workers, PostgreSQL, Elasticsearch, object storage and a Tor pool for
-                dark-web collection. Add a local LLM if you want an AI co-analyst that never sends a prompt to the cloud.</p>
+              <h2>Start free. Pay when you want it watching for you.</h2>
+              <p>Every paid plan includes continuous monitoring, alerts and verified-domain detail. Prices are per
+                organisation, billed monthly or yearly.</p>
             </div>
           </Reveal>
-          <div className="two-col">
-            <Reveal>
-              <pre className="code"><span className="c"># generate secrets and an admin account</span>{'\n'}python scripts/gen_secrets.py --admin-email you@company.com{'\n\n'}<span className="c"># start everything</span>{'\n'}docker compose up -d --build{'\n\n'}<span className="c"># open http://localhost:8080</span></pre>
-            </Reveal>
-            <ol className="todo">
-              {SELF_HOST.map((s, i) => <Reveal as="li" key={s} delay={i * 0.05}><span>{s}</span></Reveal>)}
-            </ol>
-          </div>
+          <ol className="plans">
+            {PLANS.map((p, i) => (
+              <Reveal as="li" key={p.name} delay={i * 0.05} className={p.featured ? 'featured' : undefined}>
+                <p className="label">{p.name}{p.featured && <span className="tag">Popular</span>}</p>
+                <p className="price"><b>{p.price}</b> <span>{p.per}</span></p>
+                <p className="blurb">{p.blurb}</p>
+                <ul>{p.items.map((x) => <li key={x}>{x}</li>)}</ul>
+                <Link className={p.featured ? 'btn' : 'btn quiet'} href={p.cta[1]}>{p.cta[0]}</Link>
+              </Reveal>
+            ))}
+          </ol>
           <Reveal as="p" className="note">
             SecYourScan is for monitoring assets your organisation owns or is authorised to monitor. It matches what it
             finds against your watchlist and nothing else. There is no people-search and no profiling of individuals.
@@ -190,7 +197,7 @@ export default async function Home() {
           <Reveal as="p" className="muted" delay={0.2}>Check yourself now, or set the platform up for your team.</Reveal>
           <Reveal className="row" delay={0.3}>
             <Link className="btn" href="/check">Check an email</Link>
-            <Link className="btn quiet" href="/#self-host">Self-host it</Link>
+            <Link className="btn quiet" href="/#pricing">See pricing</Link>
           </Reveal>
         </div>
       </section>

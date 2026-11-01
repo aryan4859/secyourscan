@@ -314,7 +314,7 @@ function DomainReport({ domain, d }) {
           <h2 className="h-sub">Which addresses, and which breaches?</h2>
           <p className="muted">We only show that detail to the domain’s owner. In the platform, prove you control the domain with a DNS
             TXT record, and you get the full list. New exposures alert you as they appear.</p>
-          <p><Link className="btn" href="/#self-host">Set up monitoring</Link></p>
+          <p><Link className="btn" href="/#pricing">Set up monitoring</Link></p>
         </Reveal>
         <Reveal delay={0.1}>
           <h2 className="h-sub">In the meantime</h2>

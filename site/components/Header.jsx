@@ -10,7 +10,7 @@ const LINKS = [
   ['/#product', 'Product'],
   ['/check', 'Check an email'],
   ['/breaches', 'Breach directory'],
-  ['/#self-host', 'Self-host'],
+  ['/#pricing', 'Pricing'],
 ];
 
 export function Logo() {

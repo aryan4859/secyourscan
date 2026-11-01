@@ -185,6 +185,19 @@ pre.code .c { color: #9a9890; }
 .todo li { counter-increment: t; display: grid; grid-template-columns: 32px 1fr; padding: 12px 0; border-bottom: 1px solid var(--rule); }
 .todo li::before { content: counter(t, decimal-leading-zero); font-family: var(--mono); font-size: 13px; color: var(--ink-3); padding-top: 2px; }
 
+.plans { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); }
+.plans > li { display: flex; flex-direction: column; gap: 12px; padding: 28px 24px 28px 0; border-bottom: 1px solid var(--rule); }
+.plans > li + li { padding-left: 24px; border-left: 1px solid var(--rule); }
+.plans > li.featured { border-top: 2px solid var(--accent); margin-top: -1px; }
+.plans .tag { margin-left: 8px; color: var(--accent); }
+.plans .price { margin: 0; }
+.plans .price b { font-size: 34px; font-weight: 500; letter-spacing: -.02em; }
+.plans .price span { color: var(--ink-3); font-size: 14px; }
+.plans .blurb { margin: 0; color: var(--ink-2); font-size: 15px; }
+.plans ul { list-style: none; margin: 4px 0 0; padding: 0; flex: 1; font-size: 14px; }
+.plans ul li { padding: 7px 0; border-top: 1px solid var(--rule); color: var(--ink-2); }
+.plans .btn { align-self: flex-start; margin-top: 8px; }
+
 .note { margin: 40px 0 0; border-left: 2px solid var(--accent); padding: 2px 0 2px 16px; color: var(--ink-2); font-size: 15px; max-width: 64ch; }
 .more { margin: 24px 0 0; }
 
@@ -272,6 +285,8 @@ pre.code .c { color: #9a9890; }
   .figures { grid-template-columns: 1fr 1fr; }
   .figures > div:nth-child(3) { padding-left: 0; border-left: 0; }
   .figures > div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .plans { grid-template-columns: 1fr 1fr; }
+  .plans > li:nth-child(3) { padding-left: 0; border-left: 0; }
 }
 
 @media (max-width: 680px) {
@@ -290,6 +305,8 @@ pre.code .c { color: #9a9890; }
   .detail dd { margin-bottom: 8px; }
   .count-line { margin-left: 0; }
   .figures .v { font-size: 26px; }
+  .plans { grid-template-columns: 1fr; }
+  .plans > li, .plans > li + li { padding: 24px 0; border-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
