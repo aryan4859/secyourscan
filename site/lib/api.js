@@ -1,5 +1,7 @@
 // SecYourScan public breach API. Change the host here or with NEXT_PUBLIC_BREACH_API.
-export const API = process.env.NEXT_PUBLIC_BREACH_API || 'https://secyourscan.shyenasec.com/v1';
+// It is a separate host from the website (secyourscan.shyenasec.com): /v1/* on
+// the website itself is just the Next.js 404 page.
+export const API = process.env.NEXT_PUBLIC_BREACH_API || 'https://secyourscanapi.shyenasec.com/v1';
 
 async function get(path, init) {
   const res = await fetch(API + path, { headers: { Accept: 'application/json' }, ...init });
