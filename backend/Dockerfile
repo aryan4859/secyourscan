@@ -5,8 +5,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /srv
 COPY requirements.txt .
+# Optional pre-downloaded wheels (backend/wheels/, git-ignored) for hosts where
+# Docker's network is slow; when the folder has none, pip uses PyPI as normal.
+COPY wheels/ /tmp/wheels/
 # Cache mount: a rerun after a network failure reuses what was already downloaded.
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if ls /tmp/wheels/*.whl >/dev/null 2>&1; then \
+      pip install --no-index --find-links /tmp/wheels -r requirements.txt; \
+    else \
+      pip install -r requirements.txt; \
+    fi && rm -rf /tmp/wheels
 
 COPY app ./app
 COPY mcp_server.py .

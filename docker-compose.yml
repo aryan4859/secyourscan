@@ -6,7 +6,7 @@
 #   Dark-web traffic: workers ─► tor-lb (HAProxy) ─► tor ×5 (internal network only).
 
 x-app: &app
-  build: ./backend
+  build: {context: ./backend, network: host}   # host net for builds: Docker Desktop's bridge is very slow here
   image: secyourscan-backend:latest
   env_file: .env
   environment:
@@ -99,7 +99,7 @@ services:
     networks: [backend]
 
   tor:
-    build: ./infrastructure/tor
+    build: {context: ./infrastructure/tor, network: host}
     deploy: {replicas: 5}
     restart: unless-stopped
     networks: [tor]
@@ -142,6 +142,7 @@ services:
     build:
       context: .
       dockerfile: infrastructure/web/Dockerfile
+      network: host
     ports: ["127.0.0.1:8080:8080"]
     depends_on:
       api: {condition: service_healthy}
