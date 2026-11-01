@@ -13,15 +13,27 @@ const LINKS = [
   ['/#pricing', 'Pricing'],
 ];
 
+// One corner bracket of the mark; the other three are the same path rotated.
+const BRACKET = 'M0 18A18 18 0 0 1 18 0H43.2V19H28A9 9 0 0 0 19 28V43.2H0Z';
+
+/** The SecYourScan mark: four brackets around a red target. Colours come
+ *  from --logo-navy / --logo-blue / --logo-red so it reads in both themes. */
 export function Logo() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="9.5" />
-      <path d="M12 12l6-6" />
-      <path d="M7.5 16.5a6.4 6.4 0 0 1 9-9" />
-      <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none" />
+    <svg className="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+      <path d={BRACKET} fill="var(--logo-navy)" />
+      <path d={BRACKET} fill="var(--logo-blue)" transform="rotate(90 50 50)" />
+      <path d={BRACKET} fill="var(--logo-navy)" transform="rotate(180 50 50)" />
+      <path d={BRACKET} fill="var(--logo-blue)" transform="rotate(270 50 50)" />
+      <path d="M50 11v17M50 72v17M11 50h17M72 50h17" stroke="var(--logo-navy)" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <rect className="brand-target" x="43.5" y="43.5" width="13" height="13" rx="1.8" fill="var(--logo-red)" />
     </svg>
   );
+}
+
+/** Mark plus wordmark, as in the brand artwork: "SecYour" in ink, "Scan" in blue. */
+export function Wordmark() {
+  return <span className="wordmark">SecYour<span>Scan</span></span>;
 }
 
 export default function Header() {
@@ -39,7 +51,7 @@ export default function Header() {
   return (
     <header className="site-head">
       <div className="wrap">
-        <Link className="logo" href="/" aria-label="SecYourScan home"><Logo /> SecYourScan</Link>
+        <Link className="logo" href="/" aria-label="SecYourScan home"><Logo /><Wordmark /></Link>
         <nav className="site-nav" aria-label="Main">{nav}</nav>
         <button className="menu-btn" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen((v) => !v)}>
           {open ? 'Close' : 'Menu'}

@@ -14,11 +14,14 @@ export default withMermaid({
     "Self-hosted exposure monitoring for your organisation's own domains, emails, keywords, IPs and wallets across breach, paste and dark-web material.",
   cleanUrls: true,
   appearance: 'dark',
+  // Brand mark (brand/secyourscan-mark.svg); the SVG adapts to light and dark.
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${process.env.DOCS_BASE ?? '/'}favicon.svg` }]],
   mermaid: {
     // Follow the site theme instead of mermaid's default light palette.
     theme: 'dark',
   },
   themeConfig: {
+    logo: '/logo.svg',
     nav: [
       { text: 'Overview', link: '/guide/' },
       { text: 'Deploy', link: '/guide/deployment' },

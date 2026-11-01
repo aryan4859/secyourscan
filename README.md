@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/secyourscan-logo-dark.svg">
+  <img alt="SecYourScan" src="brand/secyourscan-logo-light.svg" width="360">
+</picture>
+
 # SecYourScan
 
 Self-hosted exposure monitoring for **your organisation's own assets**. Put your domains, emails, keywords, IPs and wallets on a watchlist. SecYourScan then reads breach, paste and dark-web material for them, scores what it finds, masks the secrets, and alerts you. Everything runs on your own infrastructure.

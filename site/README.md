@@ -2,7 +2,7 @@
 
 Next.js 16 (App Router) + [Motion](https://motion.dev) for animation. Plain CSS: no UI kit, no Tailwind.
 
-| Route | What it does | API (`secyourscan.shyenasec.com/v1`) | Rendering |
+| Route | What it does | API (`secyourscanapi.shyenasec.com/v1`) | Rendering |
 |---|---|---|---|
 | `/` | Landing page: email/domain check, live index numbers, radar of the newest breaches, recent breaches, breaches by industry, breach news | `/metrics/detailed` (falls back to `/metrics`), `/pulse` | Static, re-generated hourly |
 | `/check?email=…` / `?domain=…` | Breach report for an email, summary for a domain | `/check-email/`, `/breach-analytics/`, `/domain-breaches-summary` | Client side, live |

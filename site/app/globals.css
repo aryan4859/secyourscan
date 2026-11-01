@@ -15,6 +15,10 @@
   --mono: var(--font-mono), ui-monospace, 'Cascadia Code', Consolas, monospace;
   --wrap: 1120px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Brand mark (see components/Header.jsx Logo) */
+  --logo-navy: #0a1a3a;
+  --logo-blue: #0b5cf5;
+  --logo-red: #c0120c;
   color-scheme: light;
 }
 
@@ -30,6 +34,10 @@
     --accent-ink: #121214;
     --bad: #f07167;
     --ok: #6cc28e;
+    /* The artwork's navy disappears on a dark page; same hue, lighter. */
+    --logo-navy: #2b4c8f;
+    --logo-blue: #3b7bff;
+    --logo-red: #e0261e;
     color-scheme: dark;
   }
 }
@@ -69,8 +77,11 @@ code { font-family: var(--mono); font-size: .9em; }
   backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--rule); }
 .site-head > .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 24px; }
 .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; text-decoration: none; letter-spacing: -.01em; }
-.logo svg { width: 22px; height: 22px; transition: transform .8s var(--ease); }
+.logo svg { width: 26px; height: 26px; flex: none; transition: transform .8s var(--ease); }
 .logo:hover svg { transform: rotate(90deg); }
+.wordmark { font-weight: 700; font-size: 18px; letter-spacing: -.02em; color: var(--ink); }
+.wordmark > span { color: var(--logo-blue); }
+@media (prefers-reduced-motion: reduce) { .logo:hover svg { transform: none; } }
 .site-nav { display: flex; gap: 28px; font-size: 15px; }
 .site-nav a, .mobile-nav a { position: relative; text-decoration: none; color: var(--ink-2); }
 .site-nav a:hover, .site-nav a[aria-current="page"] { color: var(--ink); }
