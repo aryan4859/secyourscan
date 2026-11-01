@@ -216,7 +216,11 @@ async def kev_catalog() -> dict[str, dict]:
         r = await c.get(settings.KEV_URL)
         r.raise_for_status()
         return {v["cveID"]: {"added": v.get("dateAdded"), "name": (v.get("vulnerabilityName") or "")[:255],
-                             "ransomware": v.get("knownRansomwareCampaignUse") == "Known"}
+                             "ransomware": v.get("knownRansomwareCampaignUse") == "Known",
+                             # vendor/product/description/due feed vulnerability intelligence
+                             "vendor": (v.get("vendorProject") or "")[:120], "product": (v.get("product") or "")[:120],
+                             "description": (v.get("shortDescription") or "")[:600], "due": v.get("dueDate"),
+                             "action": (v.get("requiredAction") or "")[:300]}
                 for v in r.json().get("vulnerabilities", [])}
 
 
@@ -295,13 +299,16 @@ async def scan_surface(db: AsyncSession, tenant_id: str) -> dict:
             db.add(h)
             new += 1
         addrs = resolved.get(name, [])
-        info = [idb.get(ip) or {} for ip in addrs]
+        # Shared CDN edges: their InternetDB ports/CPEs/CVEs describe other
+        # customers' sites, so only the host's own (origin) IPs count.
+        cdns = {cdn for ip in addrs if (cdn := asm.cdn_provider(ip, (idb.get(ip) or {}).get("tags")))}
+        info = [idb.get(ip) or {} for ip in addrs if not asm.cdn_provider(ip, (idb.get(ip) or {}).get("tags"))]
         h.ips = addrs
         h.resolves = bool(addrs)
         h.ports = sorted({p for i in info for p in i.get("ports", [])})
         h.cves = sorted({v for i in info for v in i.get("vulns", [])})
         h.cpes = sorted({c for i in info for c in i.get("cpes", [])})[:50]
-        h.tags = sorted({t for i in info for t in i.get("tags", [])})
+        h.tags = sorted({t for i in info for t in i.get("tags", [])} | {f"cdn:{c}" for c in cdns})
         h.sources = found_by.get(name, [])
         threats = listings.get(name, []) + [t for ip in addrs for t in listings.get(ip, [])]
         known = {(t["feed"], t.get("indicator")) for t in (h.threats or [])}
@@ -345,7 +352,10 @@ async def scan_vulns(db: AsyncSession, tenant_id: str, kev: dict[str, dict]) -> 
             pairs[(h.hostname, cve)] = (h.ips or [None])[0]
     watched_ips = (await db.execute(select(WatchItem.value).where(
         WatchItem.tenant_id == tenant_id, WatchItem.type == "ip", WatchItem.is_active.is_(True)))).scalars().all()
-    for ip, info in (await _gather_limited(5, [i for i in watched_ips if _public(i)], internetdb)).items():
+    for ip, info in (await _gather_limited(5, [i for i in watched_ips if _public(i) and not asm.cdn_provider(i)],
+                                           internetdb)).items():
+        if asm.cdn_provider(ip, info.get("tags")):
+            continue
         for cve in info.get("vulns", []):
             pairs[(ip, cve)] = ip
 
@@ -369,10 +379,33 @@ async def scan_vulns(db: AsyncSession, tenant_id: str, kev: dict[str, dict]) -> 
         if f.status == "fixed":
             f.status = "open"  # it came back
         f.last_seen = now
-    fixed = 0
+    fixed = withdrawn = 0
     for key, f in existing.items():
-        if key not in pairs and f.status == "open":
+        if key in pairs:
+            continue
+        if asm.cdn_provider(f.ip):
+            # Never real: inferred from a shared CDN edge. Remove it and close
+            # the incident it opened instead of reporting it as "fixed".
+            await _withdraw(db, tenant_id, f)
+            withdrawn += 1
+        elif f.status == "open":
             f.status = "fixed"
             fixed += 1
     await db.commit()
-    return {"findings": len(pairs), "kev": sum(1 for (_, c) in pairs if c in kev), "new_kev": new_kev, "fixed": fixed}
+    return {"findings": len(pairs), "kev": sum(1 for (_, c) in pairs if c in kev), "new_kev": new_kev, "fixed": fixed,
+            "withdrawn": withdrawn}
+
+
+async def _withdraw(db: AsyncSession, tenant_id: str, f: VulnFinding) -> None:
+    from ..models import Incident, IncidentEvent
+
+    inc = await db.scalar(select(Incident).where(Incident.tenant_id == tenant_id, Incident.source_type == "vuln",
+                                                 Incident.source_id == f.id))
+    if inc is not None and inc.status not in ("resolved", "false_positive"):
+        now = utcnow()
+        inc.status, inc.resolved_at, inc.updated_at = "false_positive", now, now
+        inc.acknowledged_at = inc.acknowledged_at or now
+        db.add(IncidentEvent(incident_id=inc.id, kind="status", actor="system", at=now,
+                             body=f"Closed as false positive: {f.cve} was inferred from shared CDN IP {f.ip}, "
+                                  "not from this host."))
+    await db.delete(f)

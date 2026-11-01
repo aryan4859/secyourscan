@@ -93,9 +93,12 @@ class Settings(BaseSettings):
     WAYBACK_CDX_URL: str = "https://web.archive.org/cdx/search/cdx"
     OTX_API_KEY: str | None = None  # free at otx.alienvault.com; enables OTX passive DNS
     SURFACE_DNS_BRUTEFORCE: bool = True  # resolve ~170 common subdomain names
-    URLHAUS_RECENT_URL: str = "https://urlhaus.abuse.ch/downloads/text_recent/"
+    # The open URLhaus / ThreatFox exports now answer 410 Gone; both feeds use
+    # the APIs with ABUSECH_AUTH_KEY instead.
+    URLHAUS_API_RECENT_URL: str = "https://urlhaus-api.abuse.ch/v1/urls/recent/limit/1000/"
     FEODO_URL: str = "https://feodotracker.abuse.ch/downloads/ipblocklist.json"
-    THREATFOX_RECENT_URL: str = "https://threatfox.abuse.ch/export/json/recent/"
+    THREATFOX_API_URL: str = "https://threatfox-api.abuse.ch/api/v1/"
+    THREATFOX_DAYS: int = 3
     OPENPHISH_URL: str = "https://openphish.com/feed.txt"
     PHISHSTATS_URL: str = "https://api.phishstats.info/api/phishing"
     RANSOMLOOK_URL: str = "https://www.ransomlook.io/api"

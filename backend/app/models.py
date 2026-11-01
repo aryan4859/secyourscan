@@ -546,6 +546,59 @@ class Ioc(Base):
     last_enriched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+# ── Executive protection & takedowns ─────────────────────────────────────────
+
+
+class Executive(Base):
+    """A person whose exposure is tracked on their own: leaks naming their
+    emails or name, stealer infections of their accounts, lookalike domains and
+    handles that impersonate them. Their emails and name are kept on the
+    watchlist as VIP items, so the pipeline flags matches as they arrive."""
+
+    __tablename__ = "executives"
+    __table_args__ = (UniqueConstraint("tenant_id", "name"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    title: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    emails: Mapped[list] = mapped_column(JSON, default=list)
+    usernames: Mapped[list] = mapped_column(JSON, default=list)  # social / chat handles
+    phones: Mapped[list] = mapped_column(JSON, default=list)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class TakedownRequest(Base):
+    """A request to have an abusive domain, URL or post removed: who to ask
+    (registrar / host abuse contacts from RDAP), the evidence, the notice
+    text, and where the request stands. Notices are drafted here and sent by
+    the analyst; nothing is emailed automatically."""
+
+    __tablename__ = "takedown_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    number: Mapped[int] = mapped_column(Integer, default=0)  # per tenant, shown as TD-0001
+    kind: Mapped[str] = mapped_column(String(16))  # domain | url | content | social
+    target: Mapped[str] = mapped_column(String(1024))  # the domain or URL to take down
+    source_type: Mapped[str | None] = mapped_column(String(32), nullable=True)  # lookalike | phishing | leak | manual
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    reason: Mapped[str] = mapped_column(String(32), default="phishing")  # phishing | impersonation | trademark | data_leak | malware | fraud
+    # draft | submitted | acknowledged | taken_down | rejected | withdrawn
+    status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
+    registrar: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    hosting: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contacts: Mapped[list] = mapped_column(JSON, default=list)  # [{role, name, email, source}]
+    evidence: Mapped[dict] = mapped_column(JSON, default=dict)
+    notice: Mapped[str] = mapped_column(Text, default="")
+    history: Mapped[list] = mapped_column(JSON, default=list)  # [{at, actor, status, note}]
+    created_by: Mapped[str] = mapped_column(String(64), default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 # ── Supply chain ─────────────────────────────────────────────────────────────
 
 

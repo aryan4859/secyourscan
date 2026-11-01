@@ -97,15 +97,22 @@ def score(yara_score: int, entities: dict, watch_matches: list[dict]) -> int:
         s += min(40, 10 + entities["credential_count"])
     if entities.get("cards"):
         s += 30
+    stolen = entities.get("stealer")
+    if stolen:
+        # Credentials taken from an infected machine: live sessions, saved
+        # passwords and cookies, not a years-old breach.
+        s += 40 + min(10, 2 * len(stolen.get("records") or []))
     if watch_matches:
         s += 25
+        if stolen:
+            s += 15  # an infected machine holds *our* credentials
         if any(m["vip"] for m in watch_matches):
             s += 15
     return max(0, min(100, s))
 
 
 def category_for(entities: dict, yara_matches: list[dict]) -> str:
-    if entities.get("credential_count"):
+    if entities.get("credential_count") or entities.get("stealer"):
         return "CREDENTIALS"
     if entities.get("cards"):
         return "FINANCIAL"

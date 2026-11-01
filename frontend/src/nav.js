@@ -1,6 +1,6 @@
 import {
-  BadgeCheck, Bot, Bug, Crosshair, FileBarChart, FileCode2, Fingerprint, Fish, Gauge, Globe, Link2, ListChecks, Moon, Network,
-  Radar, ScrollText, Search, Settings as SettingsIcon, ShieldAlert, Siren, Skull, Swords,
+  BadgeCheck, Bot, Bug, Crosshair, Crown, FileBarChart, FileCode2, Fingerprint, Fish, Flame, Gauge, Gavel, Globe, KeyRound, Link2,
+  ListChecks, Moon, Network, Radar, ScrollText, Search, Settings as SettingsIcon, ShieldAlert, Siren, Skull, Swords,
 } from 'lucide-react';
 
 // Grouped by the job you are doing, not by how the backend is built.
@@ -20,8 +20,12 @@ export const NAV = [
 
   { to: '/actors', label: 'Threat Actors', group: 'Threat Intel', icon: Swords, keywords: ['apt', 'groups', 'mitre', 'att&ck', 'ttp', 'adversary'] },
   { to: '/iocs', label: 'IOC Hunting', group: 'Threat Intel', icon: Search, keywords: ['ioc', 'indicator', 'hash', 'ip', 'enrich', 'stix', 'taxii', 'virustotal'] },
+  { to: '/identity', label: 'Identity Intelligence', group: 'Threat Intel', icon: KeyRound, keywords: ['stealer', 'infostealer', 'credentials', 'accounts', 'identity', 'access', 'redline', 'lumma', 'password reuse', 'hwid'] },
+  { to: '/vuln-intel', label: 'Vulnerability Intel', group: 'Threat Intel', icon: Flame, keywords: ['cve', 'kev', 'nvd', 'epss', 'exploited', 'tech stack', 'patch', 'advisory'] },
 
   { to: '/brand', label: 'Brand Protection', group: 'Brand & Threats', icon: Fish, keywords: ['lookalike', 'typosquat', 'phishing', 'takedown'] },
+  { to: '/executives', label: 'Executive Protection', group: 'Brand & Threats', icon: Crown, keywords: ['vip', 'executive', 'ceo', 'cfo', 'impersonation', 'dox', 'leadership'] },
+  { to: '/takedowns', label: 'Takedowns', group: 'Brand & Threats', icon: Gavel, keywords: ['takedown', 'abuse', 'registrar', 'rdap', 'removal', 'notice'] },
   { to: '/ransomware', label: 'Ransomware', group: 'Brand & Threats', icon: Skull, keywords: ['ransomware', 'leak site', 'extortion', 'groups'] },
 
   { to: '/watchlist', label: 'Watchlist', group: 'Assets', icon: ListChecks, keywords: ['assets', 'domains', 'emails', 'keywords', 'ip', 'wallet'] },

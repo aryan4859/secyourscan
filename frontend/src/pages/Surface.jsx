@@ -33,9 +33,9 @@ const DISCOVERY = [
   { key: 'dns', label: 'DNS name check', desc: '~170 common names (vpn, mail, ebanking…) resolved, wildcard answers ignored' },
 ];
 const FEEDS = [
-  { key: 'urlhaus', label: 'abuse.ch URLhaus', href: 'https://urlhaus.abuse.ch', desc: 'URLs serving malware right now: a match means a compromised server' },
+  { key: 'urlhaus', label: 'abuse.ch URLhaus', href: 'https://urlhaus.abuse.ch', desc: 'URLs serving malware right now: a match means a compromised server (needs the free ABUSECH_AUTH_KEY)' },
   { key: 'feodo', label: 'abuse.ch Feodo Tracker', href: 'https://feodotracker.abuse.ch', desc: 'Botnet command-and-control IPs' },
-  { key: 'threatfox', label: 'abuse.ch ThreatFox', href: 'https://threatfox.abuse.ch', desc: 'Recent IOCs: C2 servers, payload hosts, phishing' },
+  { key: 'threatfox', label: 'abuse.ch ThreatFox', href: 'https://threatfox.abuse.ch', desc: 'IOCs of the last 3 days: C2 servers, payload hosts, phishing (needs the free ABUSECH_AUTH_KEY)' },
   { key: 'internetdb', label: 'Shodan InternetDB', href: 'https://internetdb.shodan.io', desc: 'Open ports, CPEs and CVEs of each public IP' },
 ];
 

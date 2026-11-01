@@ -259,6 +259,33 @@ export const api = {
   updateVendor: (id, body) => patch(`/vendors/${encodeURIComponent(id)}`, body),
   deleteVendor: (id) => del(`/vendors/${encodeURIComponent(id)}`),
 
+  // identity & access intelligence
+  identitySummary: () => get('/identity/summary'),
+  identities: (params) => get('/identity/identities', params),
+  identity: (login) => get('/identity/identity', { login }),
+  identityMachines: () => get('/identity/machines'),
+
+  // vulnerability intelligence
+  vulnFeed: (params) => get('/vuln-intel/feed', params),
+  vulnRefresh: () => post('/vuln-intel/refresh'),
+  techStack: () => get('/vuln-intel/stack'),
+  saveTechStack: (items) => put('/vuln-intel/stack', { items }),
+
+  // executive protection
+  executives: () => get('/executives'),
+  executive: (id) => get(`/executives/${encodeURIComponent(id)}`),
+  createExecutive: (body) => post('/executives', body),
+  updateExecutive: (id, body) => patch(`/executives/${encodeURIComponent(id)}`, body),
+  deleteExecutive: (id) => del(`/executives/${encodeURIComponent(id)}`),
+
+  // takedowns
+  takedowns: (params) => get('/takedowns', params),
+  takedownStats: () => get('/takedowns/stats'),
+  takedown: (id) => get(`/takedowns/${encodeURIComponent(id)}`),
+  createTakedown: (body) => post('/takedowns', body),
+  updateTakedown: (id, body) => patch(`/takedowns/${encodeURIComponent(id)}`, body),
+  relookupTakedown: (id) => post(`/takedowns/${encodeURIComponent(id)}/lookup`),
+
   // yara
   yaraRules: () => get('/yara/rules'),
   createYara: (body) => post('/yara/rules', body),

@@ -18,6 +18,7 @@ from ..models import (
     ApiKey,
     AuditLog,
     DnsRecord,
+    Executive,
     Incident,
     IncidentEvent,
     IntelCache,
@@ -34,6 +35,7 @@ from ..models import (
     SourceRun,
     SurfaceEvent,
     SurfaceHost,
+    TakedownRequest,
     Tenant,
     ThreatActor,
     TlsGrade,
@@ -212,6 +214,25 @@ def ioc_refresh():
     return run_async(_run)
 
 
+@celery_app.task(name="app.worker.tasks.vuln_intel_refresh", time_limit=1800, soft_time_limit=1740)
+def vuln_intel_refresh():
+    """Every 6 h: refresh the KEV / NVD / EPSS feeds once, then open incidents
+    for newly exploited CVEs that hit each tenant's technology stack."""
+
+    async def _run(db):
+        from ..services import vulnintel
+
+        await vulnintel.refresh_feeds(db)
+        tenants = set((await db.execute(select(WatchItem.tenant_id).distinct())).scalars().all())
+        tenants |= set((await db.execute(select(IntelCache.key).where(IntelCache.key.like("techstack:%")))).scalars().all())
+        opened = {}
+        for t in {k.split(":", 1)[1] if k.startswith("techstack:") else k for k in tenants}:
+            opened[t] = await vulnintel.open_incidents(db, t)
+        return opened
+
+    return run_async(_run)
+
+
 @celery_app.task(name="app.worker.tasks.purge_revoked_tokens")
 def purge_revoked_tokens():
     async def _run(db):
@@ -235,10 +256,11 @@ def delete_tenant_saga(self, tenant_id: str, actor: str | None = None):
         await db.execute(delete(IncidentEvent).where(IncidentEvent.incident_id.in_(incident_ids)))
         for model in (Leak, Notification, SourceRun, Source, WatchItem, ApiKey, InvestigationPlan, YaraRule,
                       SurfaceHost, Lookalike, PhishingUrl, RansomwareHit, VulnFinding, TlsGrade, DnsRecord,
-                      SurfaceEvent, VerifiedDomain, Incident, ThreatActor, Ioc, Vendor, User):
+                      SurfaceEvent, VerifiedDomain, Incident, ThreatActor, Ioc, Vendor, Executive, TakedownRequest, User):
             await db.execute(delete(model).where(model.tenant_id == tenant_id))
         await db.execute(delete(IntelCache).where(IntelCache.key.like(f"scan:{tenant_id}:%")))
-        await db.execute(delete(IntelCache).where(IntelCache.key.in_([f"posture:{tenant_id}", f"profile:{tenant_id}"])))
+        await db.execute(delete(IntelCache).where(IntelCache.key.in_([f"posture:{tenant_id}", f"profile:{tenant_id}",
+                                                                      f"techstack:{tenant_id}"])))
         await db.execute(delete(AuditLog).where(AuditLog.tenant_id == tenant_id))
         await db.execute(delete(Tenant).where(Tenant.id == tenant_id))
         await db.commit()

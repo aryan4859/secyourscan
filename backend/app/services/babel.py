@@ -13,6 +13,8 @@ import re
 import unicodedata
 from collections import Counter
 
+from . import stealer
+
 EMAIL_RE = re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]+\.[A-Za-z]{2,24}(?![\w-])")
 IPV4_RE = re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])")
 BTC_RE = re.compile(r"(?<![A-Za-z0-9])(?:bc1[ac-hj-np-z02-9]{25,62}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})(?![A-Za-z0-9])")
@@ -28,6 +30,10 @@ PRIVATE_KEY_RE = re.compile(r"-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----.*?-----EN
 
 _FILE_TLDS = {"txt", "csv", "sql", "zip", "rar", "png", "jpg", "html", "php", "js", "json", "xml", "log", "exe", "py"}
 _MAX_PER_TYPE = 500
+# "label: value" lines that CRED_RE would otherwise read as identifier:password.
+_FIELD_LABELS = {"url", "host", "hostname", "site", "link", "origin", "user", "username", "login", "email", "account",
+                 "pass", "password", "pwd", "passwd", "hwid", "uid", "ip", "country", "location", "os", "soft",
+                 "application", "browser", "profile", "storage", "machineid", "machinename", "date", "time", "timezone"}
 
 
 def _luhn(digits: str) -> bool:
@@ -95,7 +101,12 @@ def extract(text: str) -> dict:
     for ident, pwd in CRED_RE.findall(text):
         if ident.lower().startswith(("http", "https")) or pwd.startswith("//"):
             continue
-        credentials.append({"identifier": ident.lower(), "password_masked": mask_secret(pwd), "password_length": len(pwd)})
+        if ident.lower() in _FIELD_LABELS:  # "PASS: x" in a stealer log is a field, not a credential
+            continue
+        credentials.append({"identifier": ident.lower(), "password_masked": mask_secret(pwd), "password_length": len(pwd),
+                            "password_fp": stealer.fingerprint(pwd)})
+
+    logs = stealer.parse(text) if stealer.looks_like_stealer(text) else None
 
     return {
         "emails": emails,
@@ -110,6 +121,8 @@ def extract(text: str) -> dict:
         "credential_count": len(credentials),
         "has_private_key": bool(PRIVATE_KEY_RE.search(text)),
         "scripts": detect_scripts(text),
+        # Infostealer output: per-credential app URL, login and machine.
+        "stealer": logs if logs and logs["records"] else None,
     }
 
 

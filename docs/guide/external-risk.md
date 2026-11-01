@@ -88,7 +88,8 @@ and latest posts worldwide.
 | `WAYBACK_CDX_URL` | `https://web.archive.org/cdx/search/cdx` |
 | `OTX_API_KEY` | unset (OTX passive DNS off) |
 | `SURFACE_DNS_BRUTEFORCE` | `true` |
-| `URLHAUS_RECENT_URL`, `FEODO_URL`, `THREATFOX_RECENT_URL` | abuse.ch public exports |
+| `URLHAUS_API_RECENT_URL`, `THREATFOX_API_URL`, `THREATFOX_DAYS` | abuse.ch URLhaus / ThreatFox APIs (need the free `ABUSECH_AUTH_KEY`; the old open exports return 410) |
+| `FEODO_URL` | abuse.ch Feodo Tracker blocklist (keyless) |
 | `OPENPHISH_URL` | `https://openphish.com/feed.txt` |
 | `PHISHSTATS_URL` | `https://api.phishstats.info/api/phishing` |
 | `RANSOMLOOK_URL` | `https://www.ransomlook.io/api` |

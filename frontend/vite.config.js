@@ -8,7 +8,8 @@ import react from '@vitejs/plugin-react';
 const API = 'http://127.0.0.1:8000';
 const PREFIXES = ['/auth', '/users', '/tenants', '/api-keys', '/leaks', '/watchlist', '/sources',
   '/recon', '/yara', '/notifications', '/ai', '/system', '/intel', '/surface', '/vulns', '/brand', '/ransomware', '/domains', '/report',
-  '/incidents', '/actors', '/attack', '/threat-intel', '/iocs', '/taxii2', '/vendors'];
+  '/incidents', '/actors', '/attack', '/threat-intel', '/iocs', '/taxii2', '/vendors',
+  '/identity', '/vuln-intel', '/executives', '/takedowns'];
 
 export default defineConfig({
   plugins: [react()],
